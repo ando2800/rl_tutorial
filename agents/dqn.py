@@ -108,6 +108,7 @@ class DQNTrainer:
         scores = []
         scores_window = deque(maxlen=100)
         epsilon = self.config['epsilon_start']
+        best_avg_score = -float('inf')
 
         print("Filling replay buffer with random experience...")
         while len(self.memory) < max(self.config['batch_size'], 1000):  # ← より多めに蓄積
@@ -139,7 +140,17 @@ class DQNTrainer:
 
             scores_window.append(score)
             scores.append(score)
+            avg_score = np.mean(scores_window)
             epsilon = max(self.config['epsilon_end'], self.config['epsilon_decay'] * epsilon)
+
+            if avg_score > best_avg_score:
+                best_avg_score = avg_score
+                os.makedirs(os.path.dirname(self.config['save_path']), exist_ok=True)
+                torch.save(self.qnetwork_local.state_dict(), self.config['save_path'])
+                print(f"New best model saved with average score: {avg_score:.2f}")
 
             loss_value = loss if loss is not None else 0.0
             print(f"Episode {i_episode} | Avg Score: {np.mean(scores_window):.2f} | Eps: {epsilon:.3f} | Loss: {loss_value:.4f}")
+        
+        pd.DataFrame(scores, columns=['reward']).to_csv(self.config['log_path'], index=False)
+
