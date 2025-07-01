@@ -9,6 +9,7 @@ from collections import namedtuple, deque
 import os
 import pandas as pd
 
+## ===== DQN Agent Implementation ===== ##
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(QNetwork, self).__init__()
@@ -43,6 +44,8 @@ class ReplayBuffer:
 
     def __len__(self):
         return len(self.memory)
+## ===== DQN Trainer Implementation ===== ##
+
 
 class DQNTrainer:
     def __init__(self, config):
@@ -89,7 +92,7 @@ class DQNTrainer:
         q_targets = rewards + (gamma * q_targets_next * (1 - dones))
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
-        loss = F.mse_loss(q_expected, q_targets)
+        loss = F.smooth_l1_loss(q_expected, q_targets)  # ← Huber loss に変更
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.qnetwork_local.parameters(), 1.0)
@@ -106,9 +109,8 @@ class DQNTrainer:
         scores_window = deque(maxlen=100)
         epsilon = self.config['epsilon_start']
 
-        # 初期ReplayBuffer充填
         print("Filling replay buffer with random experience...")
-        while len(self.memory) < self.config['batch_size']:
+        while len(self.memory) < max(self.config['batch_size'], 1000):  # ← より多めに蓄積
             state, _ = self.env.reset()
             done = False
             while not done:
@@ -124,6 +126,7 @@ class DQNTrainer:
             state = reset_output[0] if isinstance(reset_output, tuple) else reset_output
             score = 0
             done = False
+            loss = None
             while not done:
                 action = self.select_action(state, epsilon)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
@@ -131,17 +134,12 @@ class DQNTrainer:
                 loss = self.step(state, action, reward, next_state, done)
                 state = next_state
                 score += reward
-                if self.t_step % self.config['target_update_freq'] == 0:
+                if self.t_step > 0 and self.t_step % self.config['target_update_freq'] == 0:  # ← 更新条件を厳密に
                     self.soft_update(self.qnetwork_local, self.qnetwork_target, 1e-3)
 
             scores_window.append(score)
             scores.append(score)
             epsilon = max(self.config['epsilon_end'], self.config['epsilon_decay'] * epsilon)
 
-            print(f"Episode {i_episode} | Avg Score: {np.mean(scores_window):.2f} | Eps: {epsilon:.3f} | Loss: {loss:.4f}")
-
-        os.makedirs(os.path.dirname(self.config['save_path']), exist_ok=True)
-        torch.save(self.qnetwork_local.state_dict(), self.config['save_path'])
-
-        os.makedirs(os.path.dirname(self.config['log_path']), exist_ok=True)
-        pd.DataFrame(scores, columns=['reward']).to_csv(self.config['log_path'], index=False)
+            loss_value = loss if loss is not None else 0.0
+            print(f"Episode {i_episode} | Avg Score: {np.mean(scores_window):.2f} | Eps: {epsilon:.3f} | Loss: {loss_value:.4f}")
