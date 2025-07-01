@@ -9,7 +9,7 @@ from collections import namedtuple, deque
 import os
 import pandas as pd
 
-## ===== DQN Agent Implementation ===== ##
+## ===== DDQN Agent Implementation ===== ##
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(QNetwork, self).__init__()
@@ -44,10 +44,8 @@ class ReplayBuffer:
 
     def __len__(self):
         return len(self.memory)
-## ===== DQN Trainer Implementation ===== ##
 
-
-class DQNTrainer:
+class DDQNTrainer:
     def __init__(self, config):
         self.config = config
         self.env = gym.make(self.config['env_name'])
@@ -61,8 +59,8 @@ class DQNTrainer:
         self.memory = ReplayBuffer(self.config['replay_buffer_size'], self.config['batch_size'], self.config['seed'])
         self.t_step = 0
         self.best_avg_score = -float('inf')
-        self.epsilon = self.config['epsilon_start'] # Initialize epsilon here
-        self.current_loss = 0.0 # To store loss for logging
+        self.epsilon = self.config['epsilon_start']
+        self.current_loss = 0.0
 
     def _normalize_state(self, state):
         state[0] /= 2.5
@@ -73,23 +71,6 @@ class DQNTrainer:
 
     def _state_reward(self, state, env_reward):
         return env_reward - (abs(state[0]) + abs(state[2])) / 2.5
-
-    def on_episode_start(self):
-        # No specific reset needed for DQN at episode start, but keep for interface consistency
-        pass
-
-    def fill_replay_buffer(self):
-        print("Filling replay buffer with random experience...")
-        state, _ = self.env.reset()
-        for _ in range(max(self.config['batch_size'], 1000)):
-            action = self.env.action_space.sample()
-            next_state, reward, terminated, truncated, _ = self.env.step(action)
-            done = terminated or truncated
-            self.memory.add(state, action, reward, next_state, done)
-            state = next_state
-            if done:
-                state, _ = self.env.reset()
-        print("Replay buffer filled.")
 
     def select_action(self, state, epsilon):
         state = torch.from_numpy(state).float().unsqueeze(0)
@@ -103,22 +84,14 @@ class DQNTrainer:
         else:
             return np.random.choice(np.arange(self.env.action_space.n))
 
-    def step(self, state, action, reward, next_state, done):
-        self.memory.add(state, action, reward, next_state, done)
-        self.t_step = (self.t_step + 1)
-        if len(self.memory) >= self.config['batch_size']:
-            self.current_loss = self._learn(self.memory.sample(), self.config['gamma'])
-            if self.t_step % self.config['target_update_freq'] == 0:
-                self._soft_update(self.qnetwork_local, self.qnetwork_target, 1e-3)
-
     def _learn(self, experiences, gamma):
         states, actions, rewards, next_states, dones = experiences
 
-        q_targets_next_local = self.qnetwork_local(next_states).detach()
-        best_actions = q_targets_next_local.argmax(1).unsqueeze(1)
-        q_targets_next = self.qnetwork_target(next_states).detach().gather(1, best_actions)
+        # DDQN: Use local network to select actions, target network to evaluate them
+        q_local_next_actions = self.qnetwork_local(next_states).detach().argmax(1).unsqueeze(1)
+        q_target_next = self.qnetwork_target(next_states).detach().gather(1, q_local_next_actions)
 
-        q_targets = rewards + (gamma * q_targets_next * (1 - dones))
+        q_targets = rewards + (gamma * q_target_next * (1 - dones))
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
         loss = F.smooth_l1_loss(q_expected, q_targets)
@@ -128,15 +101,6 @@ class DQNTrainer:
         self.optimizer.step()
 
         return loss.item()
-
-    def on_episode_end(self, i_episode, avg_score):
-        self.epsilon = max(self.config['epsilon_end'], self.config['epsilon_decay'] * self.epsilon)
-        if avg_score > self.best_avg_score:
-            self.best_avg_score = avg_score
-            os.makedirs(os.path.dirname(self.config['save_path']), exist_ok=True)
-            torch.save(self.qnetwork_local.state_dict(), self.config['save_path'])
-            print(f"New best model saved with average score: {avg_score:.2f}")
-        print(f"Episode {i_episode} | Avg Score: {avg_score:.2f} | Eps: {self.epsilon:.3f} | Loss: {self.current_loss:.4f}")
 
     def train(self):
         scores = []
@@ -215,4 +179,3 @@ class DQNTrainer:
             score += env_reward
             reward_sum += self._state_reward(next_state, env_reward)
         return score, reward_sum
-

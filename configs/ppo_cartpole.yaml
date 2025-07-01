@@ -1,0 +1,11 @@
+project: ppo_cartpole
+algorithm: PPO
+env_name: CartPole-v1
+episodes: 2000
+learning_rate: 0.00005
+gamma: 0.99
+clip_epsilon: 0.2
+ppo_epochs: 20
+gae_lambda: 0.95
+seed: 42
+log_path: logs/ppo_cartpole_rewards.csv

@@ -35,8 +35,12 @@ class REINFORCETrainer:
 
         self.policy_network = PolicyNetwork(state_size, action_size)
         self.optimizer = optim.Adam(self.policy_network.parameters(), lr=self.config['learning_rate'])
-        self.rewards_history = []
         self.log_probs_history = []
+        self.episode_rewards = []
+
+    def on_episode_start(self):
+        self.log_probs_history = []
+        self.episode_rewards = []
 
     def select_action(self, state):
         state = torch.from_numpy(state).float().unsqueeze(0)
@@ -45,6 +49,33 @@ class REINFORCETrainer:
         action = m.sample()
         self.log_probs_history.append(m.log_prob(action))
         return action.item()
+
+    def step(self, state, action, reward, next_state, done):
+        self.episode_rewards.append(reward)
+
+    def learn(self):
+        # Calculate discounted rewards
+        discounted_rewards = []
+        R = 0
+        for r in self.episode_rewards[::-1]:
+            R = r + self.config['gamma'] * R
+            discounted_rewards.insert(0, R)
+        discounted_rewards = torch.tensor(discounted_rewards)
+        discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9)
+
+        # Calculate loss and update policy
+        policy_loss = []
+        for log_prob, G in zip(self.log_probs_history, discounted_rewards):
+            policy_loss.append(-log_prob * G)
+        self.optimizer.zero_grad()
+        torch.stack(policy_loss).sum().backward()
+        self.optimizer.step()
+
+    def on_episode_end(self, i_episode, avg_score):
+        self.learn()
+        print(f'Episode {i_episode}	Average Score: {avg_score:.2f}', end="")
+        if i_episode % 100 == 0:
+            print(f'Episode {i_episode}	Average Score: {avg_score:.2f}')
 
     def train(self):
         scores = []
@@ -57,7 +88,8 @@ class REINFORCETrainer:
             done = False
             while not done:
                 action = self.select_action(state)
-                state, reward, done, _, _ = self.env.step(action)
+                state, reward, terminated, truncated, _ = self.env.step(action)
+                done = terminated or truncated
                 episode_rewards.append(reward)
 
             scores.append(sum(episode_rewards))
@@ -80,9 +112,9 @@ class REINFORCETrainer:
             torch.stack(policy_loss).sum().backward()
             self.optimizer.step()
 
-            print(f'\rEpisode {i_episode}\tAverage Score: {np.mean(scores_window):.2f}', end="")
+            print(f'Episode {i_episode}	Average Score: {np.mean(scores_window):.2f}', end="")
             if i_episode % 100 == 0:
-                print(f'\rEpisode {i_episode}\tAverage Score: {np.mean(scores_window):.2f}')
+                print(f'Episode {i_episode}	Average Score: {np.mean(scores_window):.2f}')
 
         os.makedirs(os.path.dirname(self.config['log_path']), exist_ok=True)
         pd.DataFrame(scores, columns=['reward']).to_csv(self.config['log_path'], index=False)
