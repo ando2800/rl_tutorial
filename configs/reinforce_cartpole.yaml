@@ -1,0 +1,8 @@
+project: reinforce_cartpole
+algorithm: REINFORCE
+env_name: CartPole-v1
+episodes: 3000
+learning_rate: 0.001
+gamma: 0.99
+seed: 42
+log_path: logs/reinforce_cartpole_rewards.csv
