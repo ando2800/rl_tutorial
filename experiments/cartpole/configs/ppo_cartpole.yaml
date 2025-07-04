@@ -8,4 +8,4 @@ clip_epsilon: 0.2
 ppo_epochs: 20
 gae_lambda: 0.95
 seed: 42
-log_path: logs/ppo_cartpole_rewards.csv
+log_path: experiments/cartpole/logs/ppo_cartpole_rewards.csv

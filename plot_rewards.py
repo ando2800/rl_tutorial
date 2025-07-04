@@ -29,10 +29,12 @@ def plot_rewards(log_paths, output_dir='logs'):
     print(f"Comparison plot saved to {output_path}")
 
 if __name__ == '__main__':
-    dqn_log = 'logs/dqn_cartpole_rewards.csv'
-    a2c_log = 'logs/a2c_cartpole_rewards.csv'
-    ppo_log = 'logs/ppo_cartpole_rewards.csv'
-    reinforce_log = 'logs/reinforce_cartpole_rewards.csv'
-    ddqn_log = 'logs/ddqn_cartpole_rewards.csv'
+    log_dir = 'experiments/cartpole/logs'
+    output_dir = 'results/plots'
+    dqn_log = os.path.join(log_dir, 'dqn_cartpole_rewards.csv')
+    a2c_log = os.path.join(log_dir, 'a2c_cartpole_rewards.csv')
+    ppo_log = os.path.join(log_dir, 'ppo_cartpole_rewards.csv')
+    reinforce_log = os.path.join(log_dir, 'reinforce_cartpole_rewards.csv')
+    ddqn_log = os.path.join(log_dir, 'ddqn_cartpole_rewards.csv')
     
-    plot_rewards([dqn_log, a2c_log, ppo_log, reinforce_log, ddqn_log])
+    plot_rewards([dqn_log, a2c_log, ppo_log, reinforce_log, ddqn_log], output_dir=output_dir)

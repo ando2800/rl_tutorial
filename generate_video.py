@@ -4,7 +4,7 @@ import gymnasium as gym
 from agents.dqn import DQNTrainer, QNetwork
 import yaml
 
-def generate_video(config_path='configs/dqn_cartpole.yaml', video_folder='logs/videos'):
+def generate_video(config_path='experiments/cartpole/configs/dqn_cartpole.yaml', video_folder='results/videos'):
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
 

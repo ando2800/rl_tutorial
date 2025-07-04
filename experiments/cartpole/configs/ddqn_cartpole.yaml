@@ -1,5 +1,5 @@
-project: dqn_cartpole
-algorithm: DQN
+project: ddqn_cartpole
+algorithm: DDQN
 env_name: CartPole-v1
 episodes: 2000
 learning_rate: 0.001
@@ -11,6 +11,6 @@ replay_buffer_size: 10000
 batch_size: 64
 target_update_freq: 4
 seed: 36
-save_path: models/dqn_cartpole.pt
-log_path: logs/dqn_cartpole_rewards.csv
+save_path: experiments/cartpole/models/ddqn_cartpole.pt
+log_path: experiments/cartpole/logs/ddqn_cartpole_rewards.csv
 test_delay: 10

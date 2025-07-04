@@ -12,19 +12,19 @@ def main():
     args = parser.parse_args()
 
     if args.algorithm == 'DQN':
-        config_path = "configs/dqn_cartpole.yaml"
+        config_path = "experiments/cartpole/configs/dqn_cartpole.yaml"
         trainer_class = DQNTrainer
     elif args.algorithm == 'REINFORCE':
-        config_path = "configs/reinforce_cartpole.yaml"
+        config_path = "experiments/cartpole/configs/reinforce_cartpole.yaml"
         trainer_class = REINFORCETrainer
     elif args.algorithm == 'A2C':
-        config_path = "configs/a2c_cartpole.yaml"
+        config_path = "experiments/cartpole/configs/a2c_cartpole.yaml"
         trainer_class = A2CTrainer
     elif args.algorithm == 'PPO':
-        config_path = "configs/ppo_cartpole.yaml"
+        config_path = "experiments/cartpole/configs/ppo_cartpole.yaml"
         trainer_class = PPOTrainer
     elif args.algorithm == 'DDQN':
-        config_path = "configs/ddqn_cartpole.yaml"
+        config_path = "experiments/cartpole/configs/ddqn_cartpole.yaml"
         trainer_class = DDQNTrainer
     else:
         raise ValueError(f"Unknown algorithm: {args.algorithm}")
