@@ -5,6 +5,7 @@ from agents.reinforce import REINFORCETrainer
 from agents.a2c import A2CTrainer
 from agents.ppo import PPOTrainer
 from agents.ddqn import DDQNTrainer
+from agents.per import PERDQNTrainer
 
 def main():
     parser = argparse.ArgumentParser(description='Run RL training.')
@@ -26,6 +27,9 @@ def main():
     elif args.algorithm == 'DDQN':
         config_path = "experiments/cartpole/configs/ddqn_cartpole.yaml"
         trainer_class = DDQNTrainer
+    elif args.algorithm == 'PERDQN':
+        config_path = "experiments/cartpole/configs/per_dqn_cartpole.yaml"
+        trainer_class = PERDQNTrainer
     else:
         raise ValueError(f"Unknown algorithm: {args.algorithm}")
 

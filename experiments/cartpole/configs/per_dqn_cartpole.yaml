@@ -1,0 +1,22 @@
+project: per_dqn_cartpole
+algorithm: PERDQN
+env_name: CartPole-v1
+episodes: 2000
+learning_rate: 0.001
+gamma: 0.99
+epsilon_start: 1.0
+epsilon_end: 0.01
+epsilon_decay: 0.999
+replay_buffer_size: 10000
+batch_size: 64
+target_update_freq: 4
+seed: 36
+save_path: experiments/cartpole/models/per_dqn_cartpole.pt
+log_path: experiments/cartpole/logs/per_dqn_cartpole_rewards.csv
+test_delay: 10
+tau: 0.005
+
+# PER specific
+per_alpha: 0.6
+per_beta_start: 0.4
+per_beta_frames: 100000

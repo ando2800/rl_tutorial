@@ -63,7 +63,8 @@ if __name__ == '__main__':
         os.path.join(log_dir, 'a2c_cartpole_rewards.csv'),
         os.path.join(log_dir, 'ppo_cartpole_rewards.csv'),
         os.path.join(log_dir, 'reinforce_cartpole_rewards.csv'),
-        os.path.join(log_dir, 'ddqn_cartpole_rewards.csv')
+        os.path.join(log_dir, 'ddqn_cartpole_rewards.csv'),
+        os.path.join(log_dir, 'per_dqn_cartpole_rewards.csv')
     ]
 
     # Generate and save the comparison plot
